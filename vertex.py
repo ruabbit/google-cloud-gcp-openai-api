@@ -38,6 +38,7 @@ import langchain
 from langchain_google_vertexai import ChatVertexAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
+from vertexai.generative_models import HarmCategory, HarmBlockThreshold
 
 # Google authentication
 credentials, project_id = google.auth.default()
@@ -303,6 +304,13 @@ async def chat_completions(body: ChatBody, request: Request):
     # Wrapper around Vertex AI large language models
     llm = ChatVertexAI(
         model_name=model_name,
+        safety_settings={
+            HarmCategory.HARM_CATEGORY_UNSPECIFIED: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+        },
         temperature=temperature,
         top_k=top_k,
         top_p=top_p,
@@ -363,9 +371,11 @@ async def chat_completions(body: ChatBody, request: Request):
                 generate_stream_response_stop(),
                 ensure_ascii=False
             )
+
         return EventSourceResponse(stream(), ping=10000)
     else:
         return JSONResponse(content=generate_response(answer))
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host=host, port=port)
